@@ -1,0 +1,171 @@
+---
+- name: update the apt cache
+  become: true
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: upgrade all the packages to latest versions
+  become: true
+  apt:
+    upgrade: dist
+
+- name: determine if reboot is required
+  become: true
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required
+
+- name: Rebooting the instance
+  debug:
+    msg: Rebooting
+  notify: reboot
+  when: reboot_required.stat.exists
+
+- name: |
+    "Ensure the basic tools are installed: {{ setup_prerequisites }}"
+  become: true
+  apt:
+    name: "{{ setup_prerequisites }}"
+- name: set git config
+  become: false
+  block:
+    - name: set config user.email
+      community.general.git_config:
+        scope: global
+        name: user.email
+        value: "{{ user_email }}"
+    - name: set config user.name
+      community.general.git_config:
+        scope: global
+        name: user.name
+        value: "{{ user_name }}"
+
+- name: Install and configure Zsh
+  become: false
+  vars:
+    current_user: "{{ ansible_user }}"
+  block:
+    - name: Install zsh
+      become: true
+      apt:
+        name: zsh
+    - name: change user shell to zsh
+      become: true
+      user:
+        name: "{{ current_user }}"
+        shell: /bin/zsh
+    - name: Create antigen directory if it does not exist
+      file:
+        path: ~/.antigen
+        state: directory
+        mode: '0755'
+    - name: Is antigen already installed
+      stat:
+        path: ~/.antigen/antigen.zsh
+      register: is_antigen_already_installed
+    - name: install antigen
+      get_url:
+        url: http://git.io/antigen
+        dest: ~/.antigen/antigen.zsh
+        mode: 0544
+      when: not is_antigen_already_installed.stat.exists
+    - name: copy .antigenrc
+      copy:
+        src: dotfiles/.antigenrc
+        dest: "~/.antigen/"
+        mode: '0644'
+- name: install rust
+  script: scripts/install-rust.sh
+  args:
+    creates: ~/.rustup/settings.toml
+- name: install brew
+  become: false
+  script: scripts/install-brew.sh
+  args:
+    creates: /home/linuxbrew/.linuxbrew/bin/brew
+
+- name: Install brew packages
+  become: false
+  block:
+    - name: upgrade brew
+      community.general.homebrew:
+        path: "/home/linuxbrew/.linuxbrew/bin"
+        update_homebrew: true
+        upgrade_all: true
+    - name: "install packages {{ brew_packages }}"
+      community.general.homebrew:
+        path: "/home/linuxbrew/.linuxbrew/bin"
+        name: "{{ brew_packages }}"
+        state: present
+
+- name: Install apt packages
+  become: true
+  apt:
+    name: "{{ apt_packages }}"
+
+- name: Install pip modules
+  pip:
+    name: "{{ pip_packages }}"
+    state: present
+
+- name: configure tmux
+  block:
+    - name: copy .tmux.conf
+      copy:
+        src: dotfiles/.tmux.conf
+        dest: "~"
+        mode: '0644'
+    - name: copy .tmux.conf.local
+      copy:
+        src: dotfiles/.tmux.conf.local
+        dest: "~"
+        mode: '0644'
+
+- name: configure dotfiles
+  block:
+    - name: configure .zshrc
+      copy:
+        src: dotfiles/.zshrc
+        dest: "~"
+        mode: 0644
+    - name: configure p10k
+      copy:
+        src: dotfiles/.p10k.zsh
+        dest: "~"
+        mode: 0644
+
+- name: Rebooting the instance
+  debug:
+    msg: Rebooting
+  notify: reboot
+
+- name: configure micro
+  script: scripts/micro-plugins.sh
+
+- name: configure ranger
+  script: scripts/ranger-plugins.sh
+  args:
+    creates: ~/.config/ranger/rc.conf
+  changed_when: false
+  ignore_errors: true
+
+- name: Ensure docker is installed
+  become: false
+  block:
+    - name: Download Docker convenience script
+      become: false
+      get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
+        mode: 0544
+    - name: Install docker
+      become: true
+      command: "sh /tmp/get-docker.sh"
+      args:
+        creates: "/usr/bin/docker"
+    - name: Add user to docker group
+      become: true
+      user:
+        name: "{{ ansible_user }}"
+        group: docker

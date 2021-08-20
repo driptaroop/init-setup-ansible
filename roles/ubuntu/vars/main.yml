@@ -1,0 +1,45 @@
+---
+setup_prerequisites:
+  - curl
+  - wget
+  - git
+  - python3
+  - python3-pip
+  - ruby-dev
+  - build-essential
+  - libreadline-dev
+  - pkg-config
+  - screen
+  - gcc
+user_email: driptaroop.das@gmail.com
+user_name: Dripto
+brew_packages:
+  - tmux
+  - node
+  - fzf
+  - exa
+  - ripgrep
+  - fd
+  - bat
+  - eth-p/software/bat-extras
+  - thefuck
+  - navi
+  - micro
+  - glow
+  - jesseduffield/lazydocker/lazydocker
+  - jesseduffield/lazygit/lazygit
+  - lazydocker
+  - lazygit
+  - httpie
+  - neofetch
+apt_packages:
+  - jq
+  - ranger
+  - zoxide
+  - fortune-mod
+  - fortunes
+  - cowsay
+  - lolcat
+pip_packages:
+  - psutil
+  - bpytop

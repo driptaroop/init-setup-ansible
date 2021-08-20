@@ -1,0 +1,32 @@
+# Load oh-my-zsh library
+antigen use oh-my-zsh
+
+# Load bundles from the default repo (oh-my-zsh)
+antigen bundle git
+antigen bundle command-not-found
+antigen bundle docker
+antigen bundle pip
+antigen bundle extract
+
+# Load the theme.
+antigen theme romkatv/powerlevel10k
+
+#other plugins
+antigen bundle olets/zsh-abbr --branch=main
+antigen bundle djui/alias-tips
+antigen bundle zsh-users/zsh-apple-touchbar
+antigen bundle hlissner/zsh-autopair
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle unixorn/autoupdate-antigen.zshplugin
+antigen bundle fabiogibson/envrc-zsh-plugin
+antigen bundle unixorn/git-extra-commands
+antigen bundle brymck/print-alias
+antigen bundle icatalina/zsh-navi-plugin --branch=main
+antigen bundle zsh-users/zsh-completions
+antigen bundle gradle/gradle-completion
+antigen bundle zsh-users/zsh-syntax-highlighting
+
+antigen cache-gen
+
+# Tell Antigen that you're done.
+antigen apply
